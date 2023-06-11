@@ -1,6 +1,9 @@
 ﻿using FruteriaAPI.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Data.SqlClient;
+using Dapper;
+using FruteriaAPI.Extensions;
 
 namespace FruteriaAPI.Controllers
 {
@@ -8,16 +11,37 @@ namespace FruteriaAPI.Controllers
     [ApiController]
     public class FrutaController : ControllerBase
     {
-        [HttpGet]
-        public IActionResult GetAll()
+        private readonly string _connectionString;
+        private readonly string _connectionString_Prod;
+
+        public FrutaController(IConfiguration config) 
         {
-            return Ok();
+            _connectionString = config.GetConnectionString("Fruteria");
+            _connectionString_Prod = config.GetConnectionString("Fruterias_Prod");
+        }
+
+        [HttpGet]
+        public IEnumerable<Fruta> GetAll(bool isProd = false)
+        {
+            string query = "Select * from Frutas";
+
+            using SqlConnection myConne = new SqlConnection(isProd ? _connectionString_Prod : _connectionString);
+
+            var frutas = myConne.Query<Fruta>(query);                       
+
+            return frutas;
         }
 
         [HttpGet("{id}")]
-        public IActionResult Get(int id) 
+        public Fruta Get(int id, bool isProd = false) 
         {
-            return Ok();
+            string query = "Select * FROM Frutas WHERE id=@id";
+
+            using SqlConnection myConne = new SqlConnection(isProd ? _connectionString_Prod : _connectionString);
+
+            var fruta = myConne.QueryFirstOrDefault<Fruta>(query, new { id = id });
+
+            return fruta;
         }
 
         [HttpPost]
