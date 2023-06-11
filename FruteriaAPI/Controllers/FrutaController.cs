@@ -21,25 +21,25 @@ namespace FruteriaAPI.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<Fruta> GetAll(bool isProd = false)
+        public async Task<IEnumerable<Fruta>> GetAll(bool isProd = false)
         {
             string query = "Select * from Frutas";
 
             using SqlConnection myConne = new SqlConnection(isProd ? _connectionString_Prod : _connectionString);
 
-            var frutas = myConne.Query<Fruta>(query);                       
+            var frutas = await myConne.QueryAsync<Fruta>(query); 
 
             return frutas;
         }
 
         [HttpGet("{id}")]
-        public Fruta Get(int id, bool isProd = false) 
+        public async Task<Fruta> Get(int id, bool isProd = false) 
         {
             string query = "Select * FROM Frutas WHERE id=@id";
 
             using SqlConnection myConne = new SqlConnection(isProd ? _connectionString_Prod : _connectionString);
 
-            var fruta = myConne.QueryFirstOrDefault<Fruta>(query, new { id = id });
+            var fruta = await myConne.QueryFirstOrDefaultAsync<Fruta>(query, new { id = id });
 
             return fruta;
         }
