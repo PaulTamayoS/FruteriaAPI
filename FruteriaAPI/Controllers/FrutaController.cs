@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
 using Dapper;
 using FruteriaAPI.Extensions;
+using System.Collections.Generic;
 
 namespace FruteriaAPI.Controllers
 {
@@ -39,27 +40,64 @@ namespace FruteriaAPI.Controllers
 
             using SqlConnection myConne = new SqlConnection(isProd ? _connectionString_Prod : _connectionString);
 
-            var fruta = await myConne.QueryFirstOrDefaultAsync<Fruta>(query, new { id = id });
+            DynamicParameters parametros = new DynamicParameters();
+            parametros.Add("id", id, System.Data.DbType.Int32);
+
+            var fruta = await myConne.QueryFirstOrDefaultAsync<Fruta>(query, parametros);
 
             return fruta;
         }
 
         [HttpPost]
-        public IActionResult Post(Fruta myFruta)
+        public async Task<int> Post(Fruta myFruta, bool isProd = false)
         {
-            return Ok();
+
+            string query = @"INSERT INTO[dbo].[Frutas] ( [Nombre], [Precio], [Comentarios])
+                VALUES( @Nombre, @Precio, @Comentarios);
+                SELECT @@IDENTITY";
+
+            using SqlConnection myConne = new SqlConnection(isProd ? _connectionString_Prod : _connectionString);
+
+            DynamicParameters parametros = new DynamicParameters();
+            parametros.Add("Nombre", myFruta.Nombre, System.Data.DbType.String);
+            parametros.Add("Precio", myFruta.Precio, System.Data.DbType.Currency);
+            parametros.Add("Comentarios", myFruta.Comentarios, System.Data.DbType.String);
+
+            return await myConne.QueryFirstOrDefaultAsync<int>(query, parametros);
         }
 
         [HttpPut]
-        public IActionResult Put(Fruta myFruta) 
+        public async Task Put(Fruta myFruta, bool isProd = false) 
         {
-            return Ok();
+            string query = @"UPDATE [dbo].[Frutas]
+                SET [Nombre]=@Nombre, 
+                    [Precio]=@Precio, 
+                    [Comentarios]=@Comentarios 
+                WHERE id = @Id";
+
+            using SqlConnection myConne = new SqlConnection(isProd ? _connectionString_Prod : _connectionString);
+
+            DynamicParameters parametros = new DynamicParameters();
+            parametros.Add("Id", myFruta.Id, System.Data.DbType.Int32);
+            parametros.Add("Nombre", myFruta.Nombre, System.Data.DbType.String);
+            parametros.Add("Precio", myFruta.Precio, System.Data.DbType.Currency);
+            parametros.Add("Comentarios", myFruta.Comentarios, System.Data.DbType.String);
+
+            await myConne.ExecuteAsync(query, parametros);
         }
 
         [HttpDelete]
-        public IActionResult Delete(int id)
+        public async Task Delete(int id, bool isProd = false)
         {
-            return Ok();
+            string query = @"DELETE [dbo].[Frutas]               
+                WHERE id = @Id";
+
+            using SqlConnection myConne = new SqlConnection(isProd ? _connectionString_Prod : _connectionString);
+
+            DynamicParameters parametros = new DynamicParameters();
+            parametros.Add("Id", id, System.Data.DbType.Int32);          
+
+            await myConne.ExecuteAsync(query, parametros);
         }
     }
 }
