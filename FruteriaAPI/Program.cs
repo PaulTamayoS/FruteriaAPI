@@ -1,3 +1,6 @@
+using FruteriaAPI.Data.Repositories.Core;
+using FruteriaAPI.Extentions;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -6,6 +9,11 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+//Add dependencies
+var connectionString = builder.Configuration.GetConnectionString("Fruteria");
+builder.Services.AddSingleton<DbConnectionFactory>(x => new DbConnectionFactory(connectionString));
+builder.Services.AddCustomServices();
 
 var app = builder.Build();
 
