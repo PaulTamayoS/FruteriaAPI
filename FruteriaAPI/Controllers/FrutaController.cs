@@ -5,99 +5,83 @@ using System.Data.SqlClient;
 using Dapper;
 using FruteriaAPI.Extensions;
 using System.Collections.Generic;
+using FruteriaAPI.Data;
+using Microsoft.EntityFrameworkCore.Query.Internal;
+using Microsoft.EntityFrameworkCore;
 
 namespace FruteriaAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class FrutaController : ControllerBase
-    {
-        private readonly string _connectionString;
-        private readonly string _connectionString_Prod;
+    { 
+        private readonly FruteriaContext _context;
 
-        public FrutaController(IConfiguration config) 
+        public FrutaController(FruteriaContext context) 
         {
-            _connectionString = config.GetConnectionString("Fruteria");
-            _connectionString_Prod = config.GetConnectionString("Fruterias_Prod");
+            _context = context;
         }
 
         [HttpGet]
-        public async Task<IEnumerable<Fruta>> GetAll(bool isProd = false)
+        public async Task<IEnumerable<Fruta>> GetAll()
         {
-            string query = "Select * from Frutas";
-
-            using SqlConnection myConne = new SqlConnection(isProd ? _connectionString_Prod : _connectionString);
-
-            var frutas = await myConne.QueryAsync<Fruta>(query); 
-
-            return frutas;
+            return await _context.Frutas.ToListAsync();          
         }
 
         [HttpGet("{id}")]
-        public async Task<Fruta> Get(int id, bool isProd = false) 
+        public async Task<Fruta> Get(int id)
         {
-            string query = "Select * FROM Frutas WHERE id=@id";
-
-            using SqlConnection myConne = new SqlConnection(isProd ? _connectionString_Prod : _connectionString);
-
-            DynamicParameters parametros = new DynamicParameters();
-            parametros.Add("id", id, System.Data.DbType.Int32);
-
-            var fruta = await myConne.QueryFirstOrDefaultAsync<Fruta>(query, parametros);
-
-            return fruta;
+            return await _context.Frutas.FirstOrDefaultAsync(x => x.Id == id);
         }
 
         [HttpPost]
-        public async Task<int> Post(Fruta myFruta, bool isProd = false)
+        public async Task<int> Post(Fruta myFruta)
         {
+            try
+            {
+                myFruta.Id = 0;
+                _context.Frutas.Add(myFruta);
+                await _context.SaveChangesAsync();   
+            }
+            catch (Exception ex)
+            {
+                int x = 0;
+            }
 
-            string query = @"INSERT INTO[dbo].[Frutas] ( [Nombre], [Precio], [Comentarios])
-                VALUES( @Nombre, @Precio, @Comentarios);
-                SELECT @@IDENTITY";
-
-            using SqlConnection myConne = new SqlConnection(isProd ? _connectionString_Prod : _connectionString);
-
-            DynamicParameters parametros = new DynamicParameters();
-            parametros.Add("Nombre", myFruta.Nombre, System.Data.DbType.String);
-            parametros.Add("Precio", myFruta.Precio, System.Data.DbType.Currency);
-            parametros.Add("Comentarios", myFruta.Comentarios, System.Data.DbType.String);
-
-            return await myConne.QueryFirstOrDefaultAsync<int>(query, parametros);
+            return myFruta.Id;         
         }
 
         [HttpPut]
-        public async Task Put(Fruta myFruta, bool isProd = false) 
+        public async Task Put(Fruta myFruta)
         {
-            string query = @"UPDATE [dbo].[Frutas]
-                SET [Nombre]=@Nombre, 
-                    [Precio]=@Precio, 
-                    [Comentarios]=@Comentarios 
-                WHERE id = @Id";
 
-            using SqlConnection myConne = new SqlConnection(isProd ? _connectionString_Prod : _connectionString);
+            var query = _context.Frutas.Where(x => x.Id == myFruta.Id);
 
-            DynamicParameters parametros = new DynamicParameters();
-            parametros.Add("Id", myFruta.Id, System.Data.DbType.Int32);
-            parametros.Add("Nombre", myFruta.Nombre, System.Data.DbType.String);
-            parametros.Add("Precio", myFruta.Precio, System.Data.DbType.Currency);
-            parametros.Add("Comentarios", myFruta.Comentarios, System.Data.DbType.String);
+            if (await query.AnyAsync())
+            {
+                var myFrutaDB = await query.FirstOrDefaultAsync();
 
-            await myConne.ExecuteAsync(query, parametros);
+                myFrutaDB.Nombre = myFruta.Nombre;
+                myFrutaDB.Precio = myFruta.Precio;
+                myFrutaDB.Comentarios = myFruta.Comentarios;
+
+                await _context.SaveChangesAsync();
+            }                        
         }
 
         [HttpDelete]
-        public async Task Delete(int id, bool isProd = false)
+        public async Task Delete(int id)
         {
-            string query = @"DELETE [dbo].[Frutas]               
-                WHERE id = @Id";
 
-            using SqlConnection myConne = new SqlConnection(isProd ? _connectionString_Prod : _connectionString);
+            var query = _context.Frutas.Where(x => x.Id == id);
 
-            DynamicParameters parametros = new DynamicParameters();
-            parametros.Add("Id", id, System.Data.DbType.Int32);          
+            if (await query.AnyAsync())
+            {
+                var myFrutaDB = await query.FirstOrDefaultAsync();
+                _context.Frutas.Remove(myFrutaDB);           
 
-            await myConne.ExecuteAsync(query, parametros);
+                await _context.SaveChangesAsync();
+            }          
         }
     }
 }

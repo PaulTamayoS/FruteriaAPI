@@ -1,3 +1,6 @@
+using FruteriaAPI.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -6,6 +9,10 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+//Add Entity Framework
+var _connectionString = builder.Configuration.GetConnectionString("Fruteria");
+//var _connectionString_Prod = builder.Configuration.GetConnectionString("Fruterias_Prod");
+builder.Services.AddDbContext<FruteriaContext>(options => options.UseSqlServer(_connectionString));
 
 var app = builder.Build();
 

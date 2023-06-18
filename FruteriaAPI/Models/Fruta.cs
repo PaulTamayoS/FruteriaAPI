@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FruteriaAPI.Models
 {
+    [Table("Frutas")]
     public class Fruta
     {
         [Key]
@@ -11,6 +12,7 @@ namespace FruteriaAPI.Models
         public int Id { get; set; }
         [Required]
         [StringLength(150)]
+        [Column("Nombre")]
         public string Nombre { get; set; }
         [Required]        
         public decimal Precio { get; set; }
