@@ -9,6 +9,23 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddCors(options => 
+{
+    //options.AddPolicy("default", builder => 
+    //{ 
+    //    builder.AllowAnyOrigin()
+    //    .AllowAnyMethod()
+    //    .AllowAnyHeader(); 
+    //}); 
+    options.AddPolicy("default", builder =>
+    {
+        builder.WithOrigins("http://example.com",
+                                         "http://localhost:4200",
+                                         "https://www.example.com")
+                            .AllowAnyMethod()
+                            .AllowAnyHeader();
+    });     
+});
 
 //Add dependencies
 var connectionString = builder.Configuration.GetConnectionString("Fruteria");
@@ -23,6 +40,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors("default");
 
 app.UseHttpsRedirection();
 
